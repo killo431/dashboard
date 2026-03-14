@@ -14,6 +14,8 @@ services:
     environment:
       - PUID=0
       - PGID=0
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # Allows reaching native host services on Linux
     volumes:
       - ./config:/app/config
       - /var/run/docker.sock:/var/run/docker.sock:ro   # Layer A: Live log streaming via Xterm.js
