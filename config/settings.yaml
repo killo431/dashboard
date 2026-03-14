@@ -19,6 +19,9 @@ layout:
   Downloads:
     style: row
     columns: 3
+  System:
+    style: row
+    columns: 2
 
 # Show the status dot on each card (green = healthy)
 statusStyle: dot

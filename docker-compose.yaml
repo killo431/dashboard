@@ -1,5 +1,8 @@
-# Shared-Group Model: Each service runs as its own user but shares the
-# 'jellyfin' group (GID 1001) for cross-service data access on the XFS pool.
+# Docker containers in this stack:
+#   homepage, glances, speedtest-tracker, jellyseerr, flaresolverr
+#
+# The following services run natively (not in Docker):
+#   jellyfin, sonarr, radarr, sabnzbd, prowlarr
 
 services:
   homepage:
@@ -16,72 +19,29 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro   # Layer A: Live log streaming via Xterm.js
     restart: unless-stopped
 
-  jellyfin:
-    image: jellyfin/jellyfin:latest
-    container_name: jellyfin
-    user: "jellyfin:jellyfin"
-    ports:
-      - "8096:8096"
+  glances:
+    image: nicolargo/glances:latest
+    container_name: glances
+    pid: host
     volumes:
-      - /var/lib/jellyfin:/config
-      - /mnt/xfs_pool/Media:/media:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - GLANCES_OPT=-w
+    ports:
+      - "61208:61208"
     restart: unless-stopped
 
-  sonarr:
-    image: linuxserver/sonarr:latest
-    container_name: sonarr
-    user: "sonarr:jellyfin"             # GID 1001 — write access to XFS pool
+  speedtest-tracker:
+    image: lscr.io/linuxserver/speedtest-tracker:latest
+    container_name: speedtest-tracker
     environment:
-      - PUID=1002                       # sonarr UID
-      - PGID=1001                       # jellyfin GID (shared group)
+      - PUID=1000
+      - PGID=1000
+      - APP_URL=http://localhost:8765
     ports:
-      - "8989:8989"
+      - "8765:80"
     volumes:
-      - /var/lib/sonarr:/config
-      - /mnt/xfs_pool:/data
-    restart: unless-stopped
-
-  radarr:
-    image: linuxserver/radarr:latest
-    container_name: radarr
-    user: "radarr:jellyfin"             # GID 1001 — write access to XFS pool
-    environment:
-      - PUID=1003                       # radarr UID
-      - PGID=1001                       # jellyfin GID (shared group)
-    ports:
-      - "7878:7878"
-    volumes:
-      - /var/lib/radarr:/config
-      - /mnt/xfs_pool:/data
-    restart: unless-stopped
-
-  sabnzbd:
-    image: linuxserver/sabnzbd:latest
-    container_name: sabnzbd
-    # Runs as sonarr user so downloaded files in /mnt/xfs_pool/Complete are
-    # immediately writable by the Arr apps without a chown step.
-    user: "sonarr:jellyfin"
-    environment:
-      - PUID=1002                       # sonarr UID
-      - PGID=1001                       # jellyfin GID (shared group)
-    ports:
-      - "8080:8080"
-    volumes:
-      - /home/jellyfin/.sabnzbd:/config
-      - /mnt/xfs_pool:/data
-    restart: unless-stopped
-
-  prowlarr:
-    image: linuxserver/prowlarr:latest
-    container_name: prowlarr
-    user: "prowlarr:jellyfin"
-    environment:
-      - PUID=1004                       # prowlarr UID
-      - PGID=1001                       # jellyfin GID (shared group)
-    ports:
-      - "9696:9696"
-    volumes:
-      - /var/lib/prowlarr:/config
+      - /var/lib/speedtest-tracker:/config
     restart: unless-stopped
 
   jellyseerr:
