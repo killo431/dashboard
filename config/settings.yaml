@@ -1,0 +1,31 @@
+# Homepage dashboard settings
+# https://gethomepage.dev/latest/configs/settings/
+
+title: Home Server Dashboard
+description: Shared-Group media automation stack
+
+# Colour theme
+color: slate
+theme: dark
+
+# Navigation tabs match the services.yaml tab names
+layout:
+  Media:
+    style: row
+    columns: 2
+  Automation:
+    style: row
+    columns: 2
+  Downloads:
+    style: row
+    columns: 3
+
+# Show the status dot on each card (green = healthy)
+statusStyle: dot
+
+# Log format — keep consistent with Xterm.js rendering (Layer A)
+logpath: /app/config/logs
+
+# Target URLs are resolved from the container host perspective.
+# Change to your server's LAN IP if Homepage runs outside Docker.
+cardBlur: sm
