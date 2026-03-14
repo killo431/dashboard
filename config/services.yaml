@@ -1,18 +1,13 @@
 # =============================================================================
 # Homepage Dashboard — services.yaml
 # =============================================================================
-# Each card is enriched with three data layers:
+# Docker containers: homepage, glances, speedtest-tracker, jellyseerr, flaresolverr
+# Native (non-Docker): jellyfin, sonarr, radarr, sabnzbd, prowlarr
+#
+# Cards for Docker containers include:
 #   Layer A: enableLogs: true   — Live log stream via Docker socket → Xterm.js
 #   Layer B: enableAction: true — Power/restart slider (Docker RestartPolicy)
 #   Layer C: customapi widget   — Direct POST commands to service APIs
-#
-# User/Group model (Shared-Group, GID 1001 = jellyfin):
-#   Homepage  → root:root
-#   Jellyfin  → jellyfin:jellyfin
-#   Sonarr    → sonarr:jellyfin
-#   Radarr    → radarr:jellyfin
-#   SABnzbd   → sonarr:jellyfin  (ensures /mnt/xfs_pool/Complete is writable by Arr apps)
-#   Prowlarr  → prowlarr:jellyfin
 # =============================================================================
 
 # ---------------------------------------------------------------------------
@@ -23,12 +18,6 @@
         href: http://localhost:8096
         description: Media streaming server
         icon: jellyfin.png
-        # Layer A — Live logs (docker.sock must be mapped read-only in compose)
-        docker:
-          container: jellyfin
-          enableLogs: true
-          # Layer B — Auto-start / power toggle
-          enableAction: true
         # Layer C — Force immediate library scan of the XFS pool
         widget:
           type: customapi
@@ -68,10 +57,6 @@
         href: http://localhost:8989
         description: TV series automation
         icon: sonarr.png
-        docker:
-          container: sonarr
-          enableLogs: true    # Layer A
-          enableAction: true  # Layer B
         # Layer C — Dispatch "MissingEpisodeSearch" command to Sonarr API
         widget:
           type: sonarr
@@ -98,10 +83,6 @@
         href: http://localhost:7878
         description: Movie automation
         icon: radarr.png
-        docker:
-          container: radarr
-          enableLogs: true    # Layer A
-          enableAction: true  # Layer B
         # Layer C — Dispatch "MissingMoviesSearch" command to Radarr API
         widget:
           type: radarr
@@ -130,12 +111,8 @@
 - Downloads:
     - SABnzbd:
         href: http://localhost:8080
-        description: Usenet downloader (runs as sonarr user for XFS pool write access)
+        description: Usenet downloader
         icon: sabnzbd.png
-        docker:
-          container: sabnzbd
-          enableLogs: true    # Layer A
-          enableAction: true  # Layer B
         widget:
           type: sabnzbd
           url: http://localhost:8080
@@ -145,10 +122,6 @@
         href: http://localhost:9696
         description: Indexer aggregator (uses FlareSolverr for Cloudflare bypass)
         icon: prowlarr.png
-        docker:
-          container: prowlarr
-          enableLogs: true    # Layer A
-          enableAction: true  # Layer B
         widget:
           type: prowlarr
           url: http://localhost:9696
@@ -162,3 +135,32 @@
           container: flaresolverr
           enableLogs: true    # Layer A
           enableAction: true  # Layer B
+
+# ---------------------------------------------------------------------------
+# Tab 4 · System — Monitoring
+# ---------------------------------------------------------------------------
+- System:
+    - Glances:
+        href: http://localhost:61208
+        description: System resource monitor
+        icon: glances.png
+        docker:
+          container: glances
+          enableLogs: true    # Layer A
+          enableAction: true  # Layer B
+        widget:
+          type: glances
+          url: http://localhost:61208
+          version: 4
+
+    - Speedtest Tracker:
+        href: http://localhost:8765
+        description: Internet speed tracking
+        icon: speedtest-tracker.png
+        docker:
+          container: speedtest-tracker
+          enableLogs: true    # Layer A
+          enableAction: true  # Layer B
+        widget:
+          type: speedtest
+          url: http://localhost:8765
