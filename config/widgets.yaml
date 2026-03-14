@@ -1,0 +1,19 @@
+# Homepage info widgets — displayed across the top of the dashboard
+# https://gethomepage.dev/latest/widgets/
+
+- resources:
+    label: System
+    cpu: true
+    memory: true
+    disk: /mnt/xfs_pool          # XFS pool where all media is stored
+
+- search:
+    provider: duckduckgo
+    target: _blank
+
+- datetime:
+    text_size: xl
+    format:
+      dateStyle: short
+      timeStyle: short
+      hour12: true

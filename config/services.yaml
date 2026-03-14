@@ -1,0 +1,164 @@
+# =============================================================================
+# Homepage Dashboard — services.yaml
+# =============================================================================
+# Each card is enriched with three data layers:
+#   Layer A: enableLogs: true   — Live log stream via Docker socket → Xterm.js
+#   Layer B: enableAction: true — Power/restart slider (Docker RestartPolicy)
+#   Layer C: customapi widget   — Direct POST commands to service APIs
+#
+# User/Group model (Shared-Group, GID 1001 = jellyfin):
+#   Homepage  → root:root
+#   Jellyfin  → jellyfin:jellyfin
+#   Sonarr    → sonarr:jellyfin
+#   Radarr    → radarr:jellyfin
+#   SABnzbd   → sonarr:jellyfin  (ensures /mnt/xfs_pool/Complete is writable by Arr apps)
+#   Prowlarr  → prowlarr:jellyfin
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Tab 1 · Media — Streaming & Requests
+# ---------------------------------------------------------------------------
+- Media:
+    - Jellyfin:
+        href: http://localhost:8096
+        description: Media streaming server
+        icon: jellyfin.png
+        # Layer A — Live logs (docker.sock must be mapped read-only in compose)
+        docker:
+          container: jellyfin
+          enableLogs: true
+          # Layer B — Auto-start / power toggle
+          enableAction: true
+        # Layer C — Force immediate library scan of the XFS pool
+        widget:
+          type: customapi
+          url: http://localhost:8096
+          headers:
+            X-Emby-Token: "{{JELLYFIN_API_KEY}}"
+          mappings:
+            - field: TotalMediaCount
+              label: Total Items
+              format: number
+          actions:
+            - label: Refresh Library
+              icon: mdi-refresh
+              method: POST
+              url: http://localhost:8096/Library/Refresh
+              headers:
+                X-Emby-Token: "{{JELLYFIN_API_KEY}}"
+
+    - Jellyseerr:
+        href: http://localhost:5055
+        description: Media request management
+        icon: jellyseerr.png
+        docker:
+          container: jellyseerr
+          enableLogs: true    # Layer A
+          enableAction: true  # Layer B
+        widget:
+          type: jellyseerr
+          url: http://localhost:5055
+          key: "{{JELLYSEERR_API_KEY}}"
+
+# ---------------------------------------------------------------------------
+# Tab 2 · Automation — Arr Apps
+# ---------------------------------------------------------------------------
+- Automation:
+    - Sonarr:
+        href: http://localhost:8989
+        description: TV series automation
+        icon: sonarr.png
+        docker:
+          container: sonarr
+          enableLogs: true    # Layer A
+          enableAction: true  # Layer B
+        # Layer C — Dispatch "MissingEpisodeSearch" command to Sonarr API
+        widget:
+          type: sonarr
+          url: http://localhost:8989
+          key: "{{SONARR_API_KEY}}"
+          enableQueue: true
+          actions:
+            - label: Search Missing
+              icon: mdi-magnify
+              method: POST
+              url: http://localhost:8989/api/v3/command
+              headers:
+                X-Api-Key: "{{SONARR_API_KEY}}"
+              body: '{"name": "MissingEpisodeSearch"}'
+            - label: Refresh Series
+              icon: mdi-refresh
+              method: POST
+              url: http://localhost:8989/api/v3/command
+              headers:
+                X-Api-Key: "{{SONARR_API_KEY}}"
+              body: '{"name": "RefreshSeries"}'
+
+    - Radarr:
+        href: http://localhost:7878
+        description: Movie automation
+        icon: radarr.png
+        docker:
+          container: radarr
+          enableLogs: true    # Layer A
+          enableAction: true  # Layer B
+        # Layer C — Dispatch "MissingMoviesSearch" command to Radarr API
+        widget:
+          type: radarr
+          url: http://localhost:7878
+          key: "{{RADARR_API_KEY}}"
+          enableQueue: true
+          actions:
+            - label: Search Missing
+              icon: mdi-magnify
+              method: POST
+              url: http://localhost:7878/api/v3/command
+              headers:
+                X-Api-Key: "{{RADARR_API_KEY}}"
+              body: '{"name": "MissingMoviesSearch"}'
+            - label: Refresh Movies
+              icon: mdi-refresh
+              method: POST
+              url: http://localhost:7878/api/v3/command
+              headers:
+                X-Api-Key: "{{RADARR_API_KEY}}"
+              body: '{"name": "RefreshMovie"}'
+
+# ---------------------------------------------------------------------------
+# Tab 3 · Downloads — NZB Stack
+# ---------------------------------------------------------------------------
+- Downloads:
+    - SABnzbd:
+        href: http://localhost:8080
+        description: Usenet downloader (runs as sonarr user for XFS pool write access)
+        icon: sabnzbd.png
+        docker:
+          container: sabnzbd
+          enableLogs: true    # Layer A
+          enableAction: true  # Layer B
+        widget:
+          type: sabnzbd
+          url: http://localhost:8080
+          key: "{{SABNZBD_API_KEY}}"
+
+    - Prowlarr:
+        href: http://localhost:9696
+        description: Indexer aggregator (uses FlareSolverr for Cloudflare bypass)
+        icon: prowlarr.png
+        docker:
+          container: prowlarr
+          enableLogs: true    # Layer A
+          enableAction: true  # Layer B
+        widget:
+          type: prowlarr
+          url: http://localhost:9696
+          key: "{{PROWLARR_API_KEY}}"
+
+    - FlareSolverr:
+        href: http://localhost:8191
+        description: Cloudflare challenge solver for Prowlarr
+        icon: flaresolverr.png
+        docker:
+          container: flaresolverr
+          enableLogs: true    # Layer A
+          enableAction: true  # Layer B

@@ -1,0 +1,107 @@
+# Shared-Group Model: Each service runs as its own user but shares the
+# 'jellyfin' group (GID 1001) for cross-service data access on the XFS pool.
+
+services:
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    container_name: homepage
+    ports:
+      - "3000:3000"
+    user: root                          # Must run as root for docker.sock access (Layer A: enableLogs)
+    environment:
+      - PUID=0
+      - PGID=0
+    volumes:
+      - ./config:/app/config
+      - /var/run/docker.sock:/var/run/docker.sock:ro   # Layer A: Live log streaming via Xterm.js
+    restart: unless-stopped
+
+  jellyfin:
+    image: jellyfin/jellyfin:latest
+    container_name: jellyfin
+    user: "jellyfin:jellyfin"
+    ports:
+      - "8096:8096"
+    volumes:
+      - /var/lib/jellyfin:/config
+      - /mnt/xfs_pool/Media:/media:ro
+    restart: unless-stopped
+
+  sonarr:
+    image: linuxserver/sonarr:latest
+    container_name: sonarr
+    user: "sonarr:jellyfin"             # GID 1001 — write access to XFS pool
+    environment:
+      - PUID=1002                       # sonarr UID
+      - PGID=1001                       # jellyfin GID (shared group)
+    ports:
+      - "8989:8989"
+    volumes:
+      - /var/lib/sonarr:/config
+      - /mnt/xfs_pool:/data
+    restart: unless-stopped
+
+  radarr:
+    image: linuxserver/radarr:latest
+    container_name: radarr
+    user: "radarr:jellyfin"             # GID 1001 — write access to XFS pool
+    environment:
+      - PUID=1003                       # radarr UID
+      - PGID=1001                       # jellyfin GID (shared group)
+    ports:
+      - "7878:7878"
+    volumes:
+      - /var/lib/radarr:/config
+      - /mnt/xfs_pool:/data
+    restart: unless-stopped
+
+  sabnzbd:
+    image: linuxserver/sabnzbd:latest
+    container_name: sabnzbd
+    # Runs as sonarr user so downloaded files in /mnt/xfs_pool/Complete are
+    # immediately writable by the Arr apps without a chown step.
+    user: "sonarr:jellyfin"
+    environment:
+      - PUID=1002                       # sonarr UID
+      - PGID=1001                       # jellyfin GID (shared group)
+    ports:
+      - "8080:8080"
+    volumes:
+      - /home/jellyfin/.sabnzbd:/config
+      - /mnt/xfs_pool:/data
+    restart: unless-stopped
+
+  prowlarr:
+    image: linuxserver/prowlarr:latest
+    container_name: prowlarr
+    user: "prowlarr:jellyfin"
+    environment:
+      - PUID=1004                       # prowlarr UID
+      - PGID=1001                       # jellyfin GID (shared group)
+    ports:
+      - "9696:9696"
+    volumes:
+      - /var/lib/prowlarr:/config
+    restart: unless-stopped
+
+  jellyseerr:
+    image: fallenbagel/jellyseerr:latest
+    container_name: jellyseerr
+    user: "jellyfin:jellyfin"
+    environment:
+      - LOG_LEVEL=debug
+      - TZ=America/New_York
+    ports:
+      - "5055:5055"
+    volumes:
+      - /var/lib/jellyseerr:/app/config
+    restart: unless-stopped
+
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    environment:
+      - LOG_LEVEL=info
+    ports:
+      - "8191:8191"
+    restart: unless-stopped
