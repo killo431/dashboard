@@ -78,6 +78,23 @@ Direct `POST` requests bypass the standard web UI:
 
 ---
 
+## URL Resolution Inside Docker
+
+The Homepage container runs inside Docker and cannot use `localhost` to reach services — `localhost` inside a container refers to the container itself, not the host machine.
+
+Two URL schemes are used in `config/services.yaml`:
+
+| Service type | Widget `url` scheme | Example |
+|---|---|---|
+| **Native services** (Jellyfin, Sonarr, Radarr, SABnzbd, Prowlarr) | `http://host.docker.internal:PORT` | `http://host.docker.internal:8989` |
+| **Docker services** (Jellyseerr, Glances, Speedtest Tracker) | `http://<service-name>:<internal-port>` | `http://jellyseerr:5055` |
+
+The `href` fields in service cards use `localhost:PORT` because they are opened by the **user's browser** (which runs on the host, not inside Docker).
+
+`docker-compose.yaml` adds `extra_hosts: host.docker.internal:host-gateway` to the Homepage service so that `host.docker.internal` resolves correctly on Linux hosts.
+
+---
+
 ## Data Flow
 
 ```
@@ -130,6 +147,13 @@ Verify Homepage is running as `user: root` in `docker-compose.yaml` and that `/v
 
 **Logs/actions not available for native services?**  
 Jellyfin, Sonarr, Radarr, SABnzbd, and Prowlarr run natively (not in Docker), so the `enableLogs` and `enableAction` features are not available for these services. Use their native service management (e.g. `systemctl`) instead.
+
+**Widget shows "Error" or DNS errors in Homepage logs (e.g. `ENODATA sonarr`)?**  
+Homepage's widget backend runs inside Docker and cannot resolve bare hostnames or `localhost` for host-native services.  
+- Native services must use `http://host.docker.internal:PORT` in the widget `url` field.  
+- Docker services must use their Compose service name (e.g. `http://jellyseerr:5055`).  
+- Ensure `extra_hosts: ["host.docker.internal:host-gateway"]` is present in the `homepage` service in `docker-compose.yaml` (required on Linux; Docker Desktop handles this automatically).  
+- `href` fields can remain as `http://localhost:PORT` because they are opened by your browser, not by Homepage's server.
 
 **Permission Issues on the XFS pool?**  
 Run the "Permission Glue" command:

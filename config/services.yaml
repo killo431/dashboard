@@ -8,6 +8,11 @@
 #   Layer A: enableLogs: true   — Live log stream via Docker socket → Xterm.js
 #   Layer B: enableAction: true — Power/restart slider (Docker RestartPolicy)
 #   Layer C: customapi widget   — Direct POST commands to service APIs
+#
+# URL conventions (Homepage runs inside Docker):
+#   href: http://localhost:PORT        — opened by the user's browser (on the host)
+#   widget url (native service):       http://host.docker.internal:PORT
+#   widget url (Docker service):       http://<service-name>:<internal-port>
 # =============================================================================
 
 # ---------------------------------------------------------------------------
@@ -21,7 +26,7 @@
         # Layer C — Force immediate library scan of the XFS pool
         widget:
           type: customapi
-          url: http://localhost:8096
+          url: http://host.docker.internal:8096
           headers:
             X-Emby-Token: "{{JELLYFIN_API_KEY}}"
           mappings:
@@ -32,7 +37,7 @@
             - label: Refresh Library
               icon: mdi-refresh
               method: POST
-              url: http://localhost:8096/Library/Refresh
+              url: http://host.docker.internal:8096/Library/Refresh
               headers:
                 X-Emby-Token: "{{JELLYFIN_API_KEY}}"
 
@@ -46,7 +51,7 @@
           enableAction: true  # Layer B
         widget:
           type: jellyseerr
-          url: http://localhost:5055
+          url: http://jellyseerr:5055
           key: "{{JELLYSEERR_API_KEY}}"
 
 # ---------------------------------------------------------------------------
@@ -60,21 +65,21 @@
         # Layer C — Dispatch "MissingEpisodeSearch" command to Sonarr API
         widget:
           type: sonarr
-          url: http://localhost:8989
+          url: http://host.docker.internal:8989
           key: "{{SONARR_API_KEY}}"
           enableQueue: true
           actions:
             - label: Search Missing
               icon: mdi-magnify
               method: POST
-              url: http://localhost:8989/api/v3/command
+              url: http://host.docker.internal:8989/api/v3/command
               headers:
                 X-Api-Key: "{{SONARR_API_KEY}}"
               body: '{"name": "MissingEpisodeSearch"}'
             - label: Refresh Series
               icon: mdi-refresh
               method: POST
-              url: http://localhost:8989/api/v3/command
+              url: http://host.docker.internal:8989/api/v3/command
               headers:
                 X-Api-Key: "{{SONARR_API_KEY}}"
               body: '{"name": "RefreshSeries"}'
@@ -86,21 +91,21 @@
         # Layer C — Dispatch "MissingMoviesSearch" command to Radarr API
         widget:
           type: radarr
-          url: http://localhost:7878
+          url: http://host.docker.internal:7878
           key: "{{RADARR_API_KEY}}"
           enableQueue: true
           actions:
             - label: Search Missing
               icon: mdi-magnify
               method: POST
-              url: http://localhost:7878/api/v3/command
+              url: http://host.docker.internal:7878/api/v3/command
               headers:
                 X-Api-Key: "{{RADARR_API_KEY}}"
               body: '{"name": "MissingMoviesSearch"}'
             - label: Refresh Movies
               icon: mdi-refresh
               method: POST
-              url: http://localhost:7878/api/v3/command
+              url: http://host.docker.internal:7878/api/v3/command
               headers:
                 X-Api-Key: "{{RADARR_API_KEY}}"
               body: '{"name": "RefreshMovie"}'
@@ -115,7 +120,7 @@
         icon: sabnzbd.png
         widget:
           type: sabnzbd
-          url: http://localhost:8080
+          url: http://host.docker.internal:8080
           key: "{{SABNZBD_API_KEY}}"
 
     - Prowlarr:
@@ -124,7 +129,7 @@
         icon: prowlarr.png
         widget:
           type: prowlarr
-          url: http://localhost:9696
+          url: http://host.docker.internal:9696
           key: "{{PROWLARR_API_KEY}}"
 
     - FlareSolverr:
@@ -150,7 +155,7 @@
           enableAction: true  # Layer B
         widget:
           type: glances
-          url: http://localhost:61208
+          url: http://glances:61208
           version: 4
 
     - Speedtest Tracker:
@@ -163,4 +168,4 @@
           enableAction: true  # Layer B
         widget:
           type: speedtest
-          url: http://localhost:8765
+          url: http://speedtest-tracker:80
